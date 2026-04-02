@@ -18,28 +18,26 @@ The LLM generates descriptions, human reviews them, and we iterate until approva
 # ====================================================
 # Import necessary libraries for LangGraph workflow
 from langgraph.graph import StateGraph, START, END  # Core LangGraph components
-from langchain_openai import AzureChatOpenAI  # Azure OpenAI LLM interface
+from langchain_anthropic import ChatAnthropic  # Anthropic Claude LLM interface
 from typing import TypedDict  # For defining structured state types
 import os  # For accessing environment variables
 
 # Load environment variables from .env file
-# This allows us to store Azure credentials securely
+# This allows us to store Anthropic credentials securely
 from dotenv import load_dotenv
 load_dotenv()
 
 
 # ====================================================
-# AZURE OPENAI SETUP
+# ANTHROPIC SETUP
 # ====================================================
-# Initialize the AzureChatOpenAI LLM with specific configuration
+# Initialize the ChatAnthropic LLM with specific configuration
 # This is the AI model that will generate our product descriptions
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",  # Your Azure deployment name
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",  # Claude Haiku - fast and efficient model
     temperature=0.1,  # Low temperature = less random, more focused responses
     max_tokens=1000,  # Maximum length of generated responses
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),  # From environment variables
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),  # From environment variables
-    api_key=os.getenv("OPENAI_API_KEY"),  # From environment variables
+    api_key=os.getenv("ANTHROPIC_API_KEY"),  # From environment variables
 )
 
 
@@ -72,7 +70,7 @@ class ProductState(TypedDict):
 # ====================================================
 def generate_description(state: ProductState):
     """
-    This is Node 1: Generates product descriptions using Azure OpenAI LLM.
+    This is Node 1: Generates product descriptions using Anthropic Claude Haiku LLM.
     
     How it works:
     1. Checks if there's human feedback from previous rejection
@@ -92,7 +90,7 @@ def generate_description(state: ProductState):
         # First attempt - no feedback yet
         prompt = f"Generate a short, compelling product description for '{state['product_name']}'"
     
-    # Call Azure OpenAI LLM with our prompt
+    # Call Anthropic Claude LLM with our prompt
     result = llm.invoke(prompt).content
     
     # Return ONLY the fields we're updating (LangGraph merges this with current state)

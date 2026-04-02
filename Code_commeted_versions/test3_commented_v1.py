@@ -36,7 +36,7 @@ WORKFLOW VISUALIZATION:
 # Import necessary libraries
 from langgraph.graph import StateGraph, START, END  # Core LangGraph components
 from typing import TypedDict, Dict                  # For type hints and state definition
-from langchain_openai import AzureChatOpenAI        # Azure OpenAI LLM integration
+from langchain_anthropic import ChatAnthropic        # Anthropic Claude LLM integration
 from dotenv import load_dotenv                      # For loading environment variables
 import os                                           # For accessing environment variables
 
@@ -51,32 +51,24 @@ load_dotenv()
 """
 Initialize the Language Model (LLM) that will be used for analysis.
 
-Why AzureChatOpenAI?
-- Integrates with Azure OpenAI services
-- Provides a consistent interface for GPT models
+Why ChatAnthropic?
+- Integrates with Anthropic Claude models
+- Provides a consistent interface for Claude models
 - Handles authentication and API calls automatically
 
 Parameters Explained:
-- deployment_name: Which Azure deployment to use
-- model_name: Specific GPT model variant
+- model: Specific Claude model variant (claude-haiku-4-5-20251001 is fast and efficient)
 - temperature: Controls randomness (0.1 = very deterministic)
 - max_tokens: Maximum response length (100 tokens ≈ 75 words)
-- azure_endpoint: URL of Azure OpenAI service
-- api_version: Azure API version
-- api_key: Authentication key
-- azure_deployment: Specific deployment instance
+- api_key: Authentication key for Anthropic API
 
 This LLM object will be used by all analysis nodes.
 """
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",
-    model_name="gpt-4.1-mini",
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
     temperature=0.1,
     max_tokens=100,
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),
-    api_key=os.getenv("OPENAI_API_KEY"),
-    azure_deployment="gpt-4.1-mini"
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
 # =================================================================

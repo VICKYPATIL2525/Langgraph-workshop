@@ -19,9 +19,9 @@ from langgraph.graph import StateGraph, START, END
 # Ensures type safety and clear documentation of state fields
 from typing import TypedDict
 
-# AzureChatOpenAI: LangChain's integration with Azure OpenAI services
-# Allows us to use GPT models via Azure's infrastructure
-from langchain_openai import AzureChatOpenAI
+# ChatAnthropic: LangChain's integration with Anthropic Claude models
+# Allows us to use Claude models via Anthropic's API
+from langchain_anthropic import ChatAnthropic
 
 # dotenv: Library to load environment variables from .env file
 # Keeps sensitive information (API keys) out of source code
@@ -37,7 +37,7 @@ import os
 
 # Load variables from .env file located in project root
 # This file should contain sensitive configuration like:
-# AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_VERSION, OPENAI_API_KEY
+# ANTHROPIC_API_KEY
 # Using load_dotenv() prevents hardcoding credentials
 load_dotenv()
 
@@ -47,27 +47,19 @@ load_dotenv()
 
 """
 LLM Configuration Explanation:
-- deployment_name: Name of the Azure deployment (resource identifier)
-- model_name: Specific GPT model variant (gpt-4.1-mini is a smaller version)
+- model: Specific Claude model variant (claude-haiku-4-5-20251001 is a fast, efficient model)
 - temperature: Controls randomness (0.1 = very deterministic, little creativity)
 - max_tokens: Maximum length of generated response in tokens (~500 words)
-- azure_endpoint: URL of Azure OpenAI service endpoint
-- api_version: Version of Azure OpenAI API to use
-- api_key: Authentication key for Azure OpenAI service
-- azure_deployment: Which deployed model instance to use
+- api_key: Authentication key for Anthropic API
 
 The llm object becomes our interface to the AI model - think of it as
 a smart assistant we can ask questions to programmatically.
 """
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",  # Azure deployment resource name
-    model_name="gpt-4.1-mini",       # Model variant from OpenAI
-    temperature=0.1,                  # Low temperature = focused, consistent answers
-    max_tokens=500,                   # Limit response length to ~500 tokens
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),  # Get endpoint from .env
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),      # Get API version from .env
-    api_key=os.getenv("OPENAI_API_KEY"),                # Get API key from .env
-    azure_deployment="gpt-4.1-mini"   # Deployment to use (same as deployment_name)
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",  # Claude Haiku - fast and efficient model
+    temperature=0.1,                     # Low temperature = focused, consistent answers
+    max_tokens=500,                      # Limit response length to ~500 tokens
+    api_key=os.getenv("ANTHROPIC_API_KEY"),  # Get API key from .env
 )
 
 # ============================================
@@ -140,7 +132,7 @@ def llm_qa(state: llmstate) -> llmstate:
     prompt = f'Answer the following question{question}'
     
     # STEP 3: Invoke the LLM with our prompt
-    # .invoke() sends the prompt to Azure OpenAI and returns a response object
+    # .invoke() sends the prompt to Anthropic Claude and returns a response object
     # .content extracts just the text response from the full response object
     answer = llm.invoke(prompt).content
    
@@ -259,7 +251,7 @@ print(final_state)
 EXPECTED OUTPUT STRUCTURE:
 {
     'question': 'how far is the moon from earth',
-    'answer': 'Detailed answer from GPT-4 about moon distance...'
+    'answer': 'Detailed answer from Claude Haiku about moon distance...'
 }
 """
 
@@ -270,7 +262,7 @@ EXPECTED OUTPUT STRUCTURE:
 1. State Management: Using TypedDict to define data structure
 2. Node Creation: Functions that process state and return updates
 3. Graph Building: Connecting nodes with edges to create workflow
-4. LLM Integration: Using LangChain's AzureChatOpenAI wrapper
+4. LLM Integration: Using LangChain's ChatAnthropic wrapper
 5. Workflow Execution: .invoke() method runs the entire graph
 6. Environment Safety: Keeping API keys in .env file, not in code
 

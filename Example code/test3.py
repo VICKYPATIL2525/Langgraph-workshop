@@ -11,22 +11,18 @@ Each node returns ONLY the state fields it updates
 
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Dict
-from langchain_openai import AzureChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
 # Initialize LLM
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",
-    model_name="gpt-4.1-mini",
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
     temperature=0.1,
     max_tokens=100,
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),
-    api_key=os.getenv("OPENAI_API_KEY"),
-    azure_deployment="gpt-4.1-mini"
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
 # State definition

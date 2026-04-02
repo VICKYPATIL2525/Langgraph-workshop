@@ -1,20 +1,18 @@
 # Human-in-the-loop iterative workflow for product descriptions
 from langgraph.graph import StateGraph, START, END
-from langchain_openai import AzureChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from typing import TypedDict
 import os
 
 from dotenv import load_dotenv
 load_dotenv()
 
-# Setup Azure OpenAI
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",
+# Setup Anthropic Claude Haiku
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
     temperature=0.1,
     max_tokens=1000,
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),
-    api_key=os.getenv("OPENAI_API_KEY"),
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
 # Define state

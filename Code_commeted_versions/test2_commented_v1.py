@@ -21,8 +21,8 @@ from langgraph.graph import StateGraph, START, END
 # TypedDict for defining strict state structure
 from typing import TypedDict
 
-# AzureChatOpenAI for accessing GPT models via Azure
-from langchain_openai import AzureChatOpenAI
+# ChatAnthropic for accessing Claude models via Anthropic API
+from langchain_anthropic import ChatAnthropic
 
 # dotenv for loading environment variables securely
 from dotenv import load_dotenv
@@ -44,24 +44,16 @@ load_dotenv()
 
 """
 LLM Configuration:
-- deployment_name: Which Azure deployment to use
-- model_name: Specific GPT model (gpt-4.1-mini)
+- model: Specific Claude model (claude-haiku-4-5-20251001)
 - temperature: 0.1 = low creativity, focused responses
 - max_tokens: 500 = limit response length
-- azure_endpoint: Azure service URL (from environment variable)
-- api_version: Azure API version (from environment variable)
 - api_key: Authentication key (from environment variable)
-- azure_deployment: Which deployed model to use
 """
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",
-    model_name="gpt-4.1-mini",
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
     temperature=0.1,
     max_tokens=500,
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),
-    api_key=os.getenv("OPENAI_API_KEY"),
-    azure_deployment="gpt-4.1-mini"
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
 # ============================================
@@ -130,7 +122,7 @@ def generate_outline(state: BlogState) -> BlogState:
     print(f"[Node 1] Sending to LLM: {prompt[:50]}...")
     
     # STEP 3: Call LLM and get response
-    # .invoke() sends prompt to Azure OpenAI
+    # .invoke() sends prompt to Anthropic Claude
     # .content extracts the text response
     outline_response = llm.invoke(prompt)
     outline = outline_response.content

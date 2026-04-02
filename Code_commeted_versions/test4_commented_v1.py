@@ -2,7 +2,7 @@
 """
 CUSTOMER FEEDBACK ANALYSIS WORKFLOW
 ====================================
-This demonstrates a conditional workflow using LangGraph and Azure OpenAI.
+This demonstrates a conditional workflow using LangGraph and Anthropic Claude Haiku.
 
 Workflow Flow:
 START → check_feedback → 
@@ -17,7 +17,7 @@ This is the correct way to update state in LangGraph.
 # IMPORT STATEMENTS
 # ====================================================
 from langgraph.graph import StateGraph, START, END
-from langchain_openai import AzureChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from typing import TypedDict
 import os
 
@@ -26,27 +26,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ====================================================
-# AZURE OPENAI SETUP
+# ANTHROPIC SETUP
 # ====================================================
 """
-Initialize AzureChatOpenAI with your deployment settings:
-- deployment_name: Your Azure deployment name for GPT-4.1-mini
+Initialize ChatAnthropic with your Claude Haiku settings:
+- model: claude-haiku-4-5-20251001 - fast and efficient Claude model
 - temperature: 0.1 = low randomness, consistent responses
 - max_tokens: Maximum response length
-- azure_endpoint, api_version, api_key: From your .env file
+- api_key: From your .env file
 
 The .env file should contain:
-OPENAI_API_KEY=your_api_key_here
-AZURE_OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
-AZURE_OPENAI_VERSION=2024-12-01-preview
+ANTHROPIC_API_KEY=your_api_key_here
 """
-llm = AzureChatOpenAI(
-    deployment_name="gpt-4.1-mini",
+llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
     temperature=0.1,
     max_tokens=1000,
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_VERSION"),
-    api_key=os.getenv("OPENAI_API_KEY"),
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
 # ====================================================
@@ -89,7 +85,7 @@ def check_feedback(state: State):
     # Create simple prompt
     prompt = f"Is this feedback positive or negative? Answer only 'positive' or 'negative': {state['feedback']}"
     
-    # Call Azure OpenAI
+    # Call Anthropic Claude
     result = llm.invoke(prompt).content
     
     # Return ONLY the changed field (sentiment)
@@ -114,7 +110,7 @@ def thank_you(state: State):
     # Create simple prompt
     prompt = f"Say thank you for positive feedback: {state['feedback']}"
     
-    # Call Azure OpenAI
+    # Call Anthropic Claude
     result = llm.invoke(prompt)
     
     # Return ONLY the changed field (response)
@@ -138,7 +134,7 @@ def apology(state: State):
     # Create simple prompt
     prompt = f"Apologize and say we'll contact support about: {state['feedback']}"
     
-    # Call Azure OpenAI
+    # Call Anthropic Claude
     result = llm.invoke(prompt)
     
     # Return ONLY the changed field (response)
