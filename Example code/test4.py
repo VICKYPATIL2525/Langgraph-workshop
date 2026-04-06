@@ -1,4 +1,12 @@
-# Simple conditional workflow for customer feedback
+# test4.py - Conditional routing workflow
+# The graph takes different paths based on LLM output (sentiment)
+# If feedback is positive -> thank_you node
+# If feedback is negative -> apology node
+#
+# Flow:
+#   START -> check -> (positive) -> thanknode -> END
+#                  -> (negative) -> sorrynode -> END
+
 from langgraph.graph import StateGraph, START, END
 from langchain_anthropic import ChatAnthropic
 from typing import TypedDict
@@ -7,7 +15,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# Setup Anthropic Claude Haiku
 llm = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
     temperature=0.1,
@@ -15,79 +22,73 @@ llm = ChatAnthropic(
     api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
-
-
-# Define state
+# State carries the feedback in and the sentiment + response out
 class State(TypedDict):
-    feedback: str      # Customer feedback
-    sentiment: str     # positive or negative
-    response: str      # Final response
+    feedback: str      # Customer feedback (input, never modified)
+    sentiment: str     # "positive" or "negative" - set by check_feedback node
+    response: str      # Final reply - set by either thank_you or apology node
 
-# Node 1: Check if feedback is positive
+# Node 1: asks LLM to classify the sentiment - runs first always
 def check_feedback(state: State):
-    # Simple prompt
     prompt = f"Is this feedback positive or negative? Answer only 'positive' or 'negative': {state['feedback']}"
-    
-    # Get LLM response
+
     result = llm.invoke(prompt).content
-    
 
-    return {'sentiment':result}
+    # Return ONLY the field this node updates
+    return {'sentiment': result}
 
-# Node 2: Generate thank you for positive feedback
+# Node 2: runs ONLY if sentiment == "positive"
 def thank_you(state: State):
-    # Simple prompt
     prompt = f"Say thank you for positive feedback: {state['feedback']}"
-    
-    # Get LLM response
+
     result = llm.invoke(prompt).content
-    
+
     return {'response': result}
 
-# Node 3: Generate apology for negative feedback
+# Node 3: runs ONLY if sentiment == "negative"
 def apology(state: State):
-    # Simple prompt
     prompt = f"Apologize and say we'll contact support about: {state['feedback']}"
-    
-    # Get LLM response
+
     result = llm.invoke(prompt).content
-    
+
     return {'response': result}
 
 # Build graph
 graph = StateGraph(State)
 
-# Add nodes
 graph.add_node("check", check_feedback)
 graph.add_node("thanknode", thank_you)
 graph.add_node("sorrynode", apology)
 
-# Add edges
+# Always start at check node
 graph.add_edge(START, "check")
 
-# Conditional routing function
+# Routing function - reads the sentiment from state and returns the next node name
+# This function is called after "check" node finishes
 def decide_next(state: State):
     if state['sentiment'] == "positive":
-        return "thank"
+        return "thank"   # maps to "thanknode" below
     else:
-        return "sorry"
+        return "sorry"   # maps to "sorrynode" below
 
+# Conditional edge: after "check", call decide_next() to pick which node runs next
+# The dict maps the return value of decide_next to actual node names
 graph.add_conditional_edges(
-    "check",
-    decide_next,
+    "check",          # from this node
+    decide_next,      # call this function to decide
     {
-        "thank": "thanknode",
-        "sorry": "sorrynode"
+        "thank": "thanknode",   # if decide_next returns "thank", go to thanknode
+        "sorry": "sorrynode"    # if decide_next returns "sorry", go to sorrynode
     }
 )
 
+# Both response nodes lead to END
 graph.add_edge("thanknode", END)
 graph.add_edge("sorrynode", END)
 
-# Compile
 workflow = graph.compile()
 
-# Test it
+# Test with positive feedback
 good_feedback = "I love this product! Very good."
 bad_feedback = "This product is terrible. Worst ever."
 

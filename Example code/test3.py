@@ -1,8 +1,18 @@
-"""
-PARALLEL LLM ANALYSIS WORKFLOW WE ARE EXECUTING MULTIPLE NODES AT A TIME TO REVIEW THE ESSAY
-Each node returns ONLY the state fields it updates
-"""
-# demo essay for testing just copy and paste it in to the initial state.
+# test3.py - Parallel LLM nodes workflow
+# Three nodes (grammar, sentiment, clarity) all start from START at the same time
+# Each node scores one aspect of the essay and updates ONLY its own field in state
+# Finalizer node runs after all three finish and combines the scores into a report
+#
+# Flow:
+#          START
+#        /   |   \
+#   grammar  sentiment  clarity   <- run in parallel
+#        \   |   /
+#        finalizer
+#            |
+#           END
+#
+# Sample essays to try (paste into initial_state['essay']):
 # essay 1: Critical thinking teaches us to analyze information objectively rather than accepting it at face value.
 # essay 2: Social media connects people globally but often reduces the depth of our personal interactions.
 # essay 3: Renewable energy offers sustainable solutions for both environmental protection and economic growth.
@@ -17,32 +27,32 @@ import os
 
 load_dotenv()
 
-# Initialize LLM
 llm = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
     temperature=0.1,
-    max_tokens=100,
+    max_tokens=100,    # small limit since we only need a number back
     api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
-# State definition
+# State holds the essay input and all three scores + final report
 class ParallelState(TypedDict):
-    essay: str
-    grammar_score: int
-    sentiment_score: int
-    clarity_score: int
-    final_result: str
+    essay: str             # input essay to analyze
+    grammar_score: int     # filled by grammar_node
+    sentiment_score: int   # filled by sentiment_node
+    clarity_score: int     # filled by clarity_node
+    final_result: str      # filled by finalizer_node
 
 # ============================================
-# 3 PARALLEL ANALYSIS NODES (Correct: Return only updates)
+# PARALLEL NODES - each returns ONLY its own field
+# Returning partial state is correct in parallel execution
+# LangGraph merges all partial updates automatically
 # ============================================
 
 def grammar_node(state: ParallelState) -> Dict:
-    """Node 1: Analyze grammar - Returns ONLY grammar_score update"""
     print("[Grammar Node] Analyzing grammar...")
-    
+
     prompt = f"""Analyze the grammar of this essay and give a score out of 100:
-    
+
 Essay: "{state['essay']}"
 
 Consider:
@@ -51,22 +61,22 @@ Consider:
 - Sentence structure
 
 Return ONLY a number between 0-100:"""
-    
+
     response = llm.invoke(prompt).content.strip()
+
+    # LLM might return "85" or "85/100" - extract just the digits
     score = int(''.join(filter(str.isdigit, response))[:3])
-    score = min(score, 100)
-    
+    score = min(score, 100)  # cap at 100 in case of parsing edge case
+
     print(f"    [OK] Grammar score: {score}/100")
-    
-    # Return ONLY what we're updating
-    return {'grammar_score': score}
+
+    return {'grammar_score': score}  # return ONLY the field this node owns
 
 def sentiment_node(state: ParallelState) -> Dict:
-    """Node 2: Analyze sentiment - Returns ONLY sentiment_score update"""
     print("[Sentiment Node] Analyzing sentiment...")
-    
+
     prompt = f"""Analyze the sentiment of this essay and give a score out of 100:
-    
+
 Essay: "{state['essay']}"
 
 Consider:
@@ -75,22 +85,20 @@ Consider:
 - Engagement level
 
 Return ONLY a number between 0-100:"""
-    
+
     response = llm.invoke(prompt).content.strip()
     score = int(''.join(filter(str.isdigit, response))[:3])
     score = min(score, 100)
-    
+
     print(f"    [OK] Sentiment score: {score}/100")
-    
-    # Return ONLY what we're updating
-    return {'sentiment_score': score}
+
+    return {'sentiment_score': score}  # return ONLY the field this node owns
 
 def clarity_node(state: ParallelState) -> Dict:
-    """Node 3: Analyze clarity - Returns ONLY clarity_score update"""
     print("[Clarity Node] Analyzing clarity...")
-    
+
     prompt = f"""Analyze the clarity of this essay and give a score out of 100:
-    
+
 Essay: "{state['essay']}"
 
 Consider:
@@ -99,34 +107,33 @@ Consider:
 - Logical flow
 
 Return ONLY a number between 0-100:"""
-    
+
     response = llm.invoke(prompt).content.strip()
     score = int(''.join(filter(str.isdigit, response))[:3])
     score = min(score, 100)
-    
+
     print(f"    [OK] Clarity score: {score}/100")
-    
-    # Return ONLY what we're updating
-    return {'clarity_score': score}
+
+    return {'clarity_score': score}  # return ONLY the field this node owns
 
 # ============================================
-# FINALIZER NODE
+# FINALIZER NODE - runs after all 3 parallel nodes complete
+# At this point state has all three scores filled in
 # ============================================
 
 def finalizer_node(state: ParallelState) -> Dict:
-    """Node 4: Combine all scores - Returns ONLY final_result update"""
     print("\n[Finalizer Node] Combining all scores...")
-    
-    # Calculate average
+
+    # All three scores are now available in state
     avg_score = (state['grammar_score'] + state['sentiment_score'] + state['clarity_score']) / 3
-    
+
     prompt = f"""Generate a comprehensive analysis report based on these scores:
 
 Essay: "{state['essay']}"
 
 Scores:
 - Grammar: {state['grammar_score']}/100
-- Sentiment: {state['sentiment_score']}/100  
+- Sentiment: {state['sentiment_score']}/100
 - Clarity: {state['clarity_score']}/100
 
 Average Score: {avg_score:.1f}/100
@@ -138,14 +145,13 @@ Create a detailed report with:
 4. Specific recommendations
 
 Format the report clearly:"""
-    
+
     final_result = llm.invoke(prompt).content
-    
-    # Return ONLY what we're updating
-    return {'final_result': final_result}
+
+    return {'final_result': final_result}  # return ONLY the field this node owns
 
 # ============================================
-# BUILD PARALLEL WORKFLOW
+# BUILD GRAPH
 # ============================================
 
 print("BUILDING PARALLEL LLM ANALYZER - CORRECT VERSION")
@@ -153,10 +159,9 @@ print("=" * 60)
 print("Key: Each node returns ONLY the state fields it updates")
 print("=" * 60)
 
-# Create graph
 graph = StateGraph(ParallelState)
 
-# Add nodes
+# Register all four nodes
 graph.add_node("grammar", grammar_node)
 graph.add_node("sentiment", sentiment_node)
 graph.add_node("clarity", clarity_node)
@@ -164,7 +169,7 @@ graph.add_node("finalizer", finalizer_node)
 
 print("\n[OK] Added nodes that return partial state updates:")
 
-# TRUE PARALLEL CONNECTIONS
+# All three analysis nodes connect FROM START - this makes them run in parallel
 print("\nMaking TRUE parallel connections:")
 print("   START -> [Grammar, Sentiment, Clarity] (parallel)")
 print("   All nodes -> Finalizer")
@@ -173,6 +178,7 @@ graph.add_edge(START, "grammar")
 graph.add_edge(START, "sentiment")
 graph.add_edge(START, "clarity")
 
+# All three must finish before finalizer runs (LangGraph waits automatically)
 graph.add_edge("grammar", "finalizer")
 graph.add_edge("sentiment", "finalizer")
 graph.add_edge("clarity", "finalizer")
@@ -181,23 +187,21 @@ graph.add_edge("finalizer", END)
 
 print("\n[OK] Graph ready with proper parallel execution!")
 
-# Compile
 workflow = graph.compile()
 
 # ============================================
-# DEMONSTRATION
+# RUN
 # ============================================
 
 print("\n" + "=" * 60)
 print("PARALLEL LLM ANALYSIS - PROPER STATE MANAGEMENT")
 print("=" * 60)
 
-# Sample essay
 essay = "Artificial intelligence is revolutionizing education by providing personalized learning experiences for students and valuable tools for teachers."
 print(f"\nEssay to analyze:\n'{essay}'")
 print("-" * 60)
 
-# Initial state
+# Initialize all score fields to 0 - the parallel nodes will fill them
 initial_state = {
     'essay': essay,
     'grammar_score': 0,
@@ -211,10 +215,9 @@ print("\nNote: Each node runs in parallel and returns ONLY what it updates")
 print("   LangGraph automatically merges all updates into final state")
 print("-" * 60)
 
-# Run workflow
 result = workflow.invoke(initial_state)
 
-# Show results
+# Display results
 print("\n" + "=" * 60)
 print("FINAL STATE AFTER PARALLEL EXECUTION:")
 print("=" * 60)

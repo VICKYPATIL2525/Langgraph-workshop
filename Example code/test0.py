@@ -22,7 +22,7 @@ def addfun(state: addition_state) -> addition_state:
 
     return state  # return the full updated state
 
-# Create the graph and tell it which state structure to use
+# Create the graph and register nodes/edges 
 graph = StateGraph(addition_state)
 
 # Register the node - 'add' is just the name we give it inside the graph
