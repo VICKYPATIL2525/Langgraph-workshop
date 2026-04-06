@@ -39,7 +39,7 @@ class ParallelState(TypedDict):
 
 def grammar_node(state: ParallelState) -> Dict:
     """Node 1: Analyze grammar - Returns ONLY grammar_score update"""
-    print("🤖 [Grammar Node] Analyzing grammar...")
+    print("[Grammar Node] Analyzing grammar...")
     
     prompt = f"""Analyze the grammar of this essay and give a score out of 100:
     
@@ -56,14 +56,14 @@ Return ONLY a number between 0-100:"""
     score = int(''.join(filter(str.isdigit, response))[:3])
     score = min(score, 100)
     
-    print(f"    ✅ Grammar score: {score}/100")
+    print(f"    [OK] Grammar score: {score}/100")
     
     # Return ONLY what we're updating
     return {'grammar_score': score}
 
 def sentiment_node(state: ParallelState) -> Dict:
     """Node 2: Analyze sentiment - Returns ONLY sentiment_score update"""
-    print("🤖 [Sentiment Node] Analyzing sentiment...")
+    print("[Sentiment Node] Analyzing sentiment...")
     
     prompt = f"""Analyze the sentiment of this essay and give a score out of 100:
     
@@ -80,14 +80,14 @@ Return ONLY a number between 0-100:"""
     score = int(''.join(filter(str.isdigit, response))[:3])
     score = min(score, 100)
     
-    print(f"    ✅ Sentiment score: {score}/100")
+    print(f"    [OK] Sentiment score: {score}/100")
     
     # Return ONLY what we're updating
     return {'sentiment_score': score}
 
 def clarity_node(state: ParallelState) -> Dict:
     """Node 3: Analyze clarity - Returns ONLY clarity_score update"""
-    print("🤖 [Clarity Node] Analyzing clarity...")
+    print("[Clarity Node] Analyzing clarity...")
     
     prompt = f"""Analyze the clarity of this essay and give a score out of 100:
     
@@ -104,7 +104,7 @@ Return ONLY a number between 0-100:"""
     score = int(''.join(filter(str.isdigit, response))[:3])
     score = min(score, 100)
     
-    print(f"    ✅ Clarity score: {score}/100")
+    print(f"    [OK] Clarity score: {score}/100")
     
     # Return ONLY what we're updating
     return {'clarity_score': score}
@@ -115,7 +115,7 @@ Return ONLY a number between 0-100:"""
 
 def finalizer_node(state: ParallelState) -> Dict:
     """Node 4: Combine all scores - Returns ONLY final_result update"""
-    print("\n📊 [Finalizer Node] Combining all scores...")
+    print("\n[Finalizer Node] Combining all scores...")
     
     # Calculate average
     avg_score = (state['grammar_score'] + state['sentiment_score'] + state['clarity_score']) / 3
@@ -148,7 +148,7 @@ Format the report clearly:"""
 # BUILD PARALLEL WORKFLOW
 # ============================================
 
-print("🏗️  BUILDING PARALLEL LLM ANALYZER - CORRECT VERSION")
+print("BUILDING PARALLEL LLM ANALYZER - CORRECT VERSION")
 print("=" * 60)
 print("Key: Each node returns ONLY the state fields it updates")
 print("=" * 60)
@@ -162,12 +162,12 @@ graph.add_node("sentiment", sentiment_node)
 graph.add_node("clarity", clarity_node)
 graph.add_node("finalizer", finalizer_node)
 
-print("\n✅ Added nodes that return partial state updates:")
+print("\n[OK] Added nodes that return partial state updates:")
 
 # TRUE PARALLEL CONNECTIONS
-print("\n🔗 Making TRUE parallel connections:")
-print("   START → [Grammar, Sentiment, Clarity] (parallel)")
-print("   All nodes → Finalizer")
+print("\nMaking TRUE parallel connections:")
+print("   START -> [Grammar, Sentiment, Clarity] (parallel)")
+print("   All nodes -> Finalizer")
 
 graph.add_edge(START, "grammar")
 graph.add_edge(START, "sentiment")
@@ -179,7 +179,7 @@ graph.add_edge("clarity", "finalizer")
 
 graph.add_edge("finalizer", END)
 
-print("\n✅ Graph ready with proper parallel execution!")
+print("\n[OK] Graph ready with proper parallel execution!")
 
 # Compile
 workflow = graph.compile()
@@ -189,12 +189,12 @@ workflow = graph.compile()
 # ============================================
 
 print("\n" + "=" * 60)
-print("🚀 PARALLEL LLM ANALYSIS - PROPER STATE MANAGEMENT")
+print("PARALLEL LLM ANALYSIS - PROPER STATE MANAGEMENT")
 print("=" * 60)
 
 # Sample essay
 essay = "Artificial intelligence is revolutionizing education by providing personalized learning experiences for students and valuable tools for teachers."
-print(f"\n📝 Essay to analyze:\n'{essay}'")
+print(f"\nEssay to analyze:\n'{essay}'")
 print("-" * 60)
 
 # Initial state
@@ -206,8 +206,8 @@ initial_state = {
     'final_result': ''
 }
 
-print("\n🚀 Running parallel analysis...")
-print("\n💡 Notice: Each node runs in parallel and returns ONLY what it updates")
+print("\nRunning parallel analysis...")
+print("\nNote: Each node runs in parallel and returns ONLY what it updates")
 print("   LangGraph automatically merges all updates into final state")
 print("-" * 60)
 
@@ -216,18 +216,18 @@ result = workflow.invoke(initial_state)
 
 # Show results
 print("\n" + "=" * 60)
-print("📊 FINAL STATE AFTER PARALLEL EXECUTION:")
+print("FINAL STATE AFTER PARALLEL EXECUTION:")
 print("=" * 60)
 
-print("\n🎯 Individual Scores (updated by parallel nodes):")
-print(f"  • Grammar score: {result['grammar_score']}/100")
-print(f"  • Sentiment score: {result['sentiment_score']}/100")
-print(f"  • Clarity score: {result['clarity_score']}/100")
+print("\nIndividual Scores (updated by parallel nodes):")
+print(f"  - Grammar score: {result['grammar_score']}/100")
+print(f"  - Sentiment score: {result['sentiment_score']}/100")
+print(f"  - Clarity score: {result['clarity_score']}/100")
 
 avg = (result['grammar_score'] + result['sentiment_score'] + result['clarity_score']) / 3
-print(f"\n📈 Average Score: {avg:.1f}/100")
+print(f"\nAverage Score: {avg:.1f}/100")
 
-print("\n📄 Final Report (generated by finalizer node):")
+print("\nFinal Report (generated by finalizer node):")
 print("-" * 40)
 print(result['final_result'])
 print("=" * 60)

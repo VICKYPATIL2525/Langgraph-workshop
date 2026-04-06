@@ -1,61 +1,59 @@
-# this is the llm based workflow in this we use the node which call the llm to answer the simple query  
-# Import necessary libraries
-from langgraph.graph import StateGraph, START, END 
+# test1.py - Single LLM node workflow
+# Shows how to plug an LLM into a LangGraph node
+# Flow: START -> llm_qa -> END
+
+from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
 from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
+# Load ANTHROPIC_API_KEY from .env file
 load_dotenv()
 
-# Initialize the LLM with Anthropic Claude Haiku
+# Initialize the LLM - this object is used inside nodes to call Claude
 llm = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
-    temperature=0.1,
+    temperature=0.1,   # low = more focused, less random
     max_tokens=500,
     api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
-# Define the state structure
+# State carries the question in and the answer out
 class llmstate(TypedDict):
-    question: str 
+    question: str
     answer: str
 
-# Node function that uses LLM to answer questions
+# The single node - sends the question to LLM and stores the answer in state
 def llm_qa(state: llmstate) -> llmstate:
-    # Extract question from state
     question = state['question']
-   
-    # Create prompt for LLM
+
+    # Build the prompt string to send to the LLM
     prompt = f'Answer the following question{question}'
-    
-    # Get answer from LLM
+
+    # .invoke() calls the LLM and .content extracts the text from the response
     answer = llm.invoke(prompt).content
-   
-    # Update answer in state
-    state['answer'] = answer
+
+    state['answer'] = answer  # write answer back into state
 
     return state
 
-# Create the graph
+# Build graph
 graph = StateGraph(llmstate)
 
-# Add node to graph
 graph.add_node('llm_qa', llm_qa)
 
-# Add edges to connect nodes
+# Single straight-line flow
 graph.add_edge(START, 'llm_qa')
 graph.add_edge('llm_qa', END)
 
-# Compile the graph into executable workflow
 workflow = graph.compile()
 
-# Define initial state with question
+# Pass the question in the initial state
 initial_state = {'question': 'how far is the moon from earth'}
 
-# Execute workflow with initial state
+# Run - LLM is called inside llm_qa node
 final_state = workflow.invoke(initial_state)
 
-# Print final state
+# Prints the full state: {'question': '...', 'answer': '...'}
 print(final_state)

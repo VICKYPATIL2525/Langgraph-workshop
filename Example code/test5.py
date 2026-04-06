@@ -55,7 +55,7 @@ def get_approval(state: ProductState):
     response = input("\nApprove this description? (y/n): ").lower()
     
     if response == 'y':
-        print("✅ Approved!")
+        print("Approved!")
         return {'approved': True}
     else:
         feedback = input("What should be changed? (e.g., 'make it shorter', 'more technical'): ")
@@ -95,7 +95,7 @@ graph.add_conditional_edges(
 workflow = graph.compile()
 
 # Test it
-print("🚀 HUMAN-IN-THE-LOOP PRODUCT DESCRIPTION GENERATOR")
+print("HUMAN-IN-THE-LOOP PRODUCT DESCRIPTION GENERATOR")
 print("=" * 50)
 
 # Test product
@@ -111,7 +111,7 @@ initial_state = {
 final_state = workflow.invoke(initial_state)
 
 print("\n" + "=" * 50)
-print("✅ FINAL RESULT:")
+print("FINAL RESULT:")
 print(f"Product: {final_state['product_name']}")
 print(f"Final Description: {final_state['description']}")
 print(f"Total Attempts: {final_state['attempts']}")

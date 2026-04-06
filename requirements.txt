@@ -9,6 +9,3 @@ langchain-anthropic==0.3.10
 
 # Environment variable loading — load_dotenv()
 python-dotenv==1.0.1
-
-# MongoDB client — MongoClient (used in multisource_langgraph.py)
-pymongo==4.10.1
