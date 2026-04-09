@@ -30,7 +30,7 @@ load_dotenv()
 llm = ChatAnthropic(
     model="claude-haiku-4-5-20251001",
     temperature=0.1,
-    max_tokens=100,    # small limit since we only need a number back
+    max_tokens=1000,    # small limit since we only need a number back
     api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
 
